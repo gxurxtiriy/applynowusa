@@ -1,6 +1,7 @@
 // ============================================================
 //  Express reverse proxy — Railway / Deplexo compatible
 //  Ported from Cloudflare Worker (same behavior)
+//  Ads removed.
 // ============================================================
 
 const express = require("express");
@@ -11,74 +12,6 @@ const PORT = process.env.PORT || 3000;
 
 const shopifyDomain = "amazonjobs4u.jobtalika.com";
 
-// ─── AD CONFIGURATION ────────────────────────────────────────────────────────
-const AD_CONFIGS = {
-  "lightled.wordle.infinityfreeapp.com": {
-    key: "21a63752e6c46561211d79ec78b63bd1",
-    topKey: "a2bec61858c8ab6c194bd021e0917e9f",
-  },
-  "frontnova.wordle.infinityfreeapp.com": {
-    key: "a8c5a45895746605f5e7a2f9c9cc18f8",
-  },
-  "27.hostingpk.infinityfree.me": {
-    key: "258a126db96603af459617c973ecb753",
-    topKey: "ceb2d651381a5967bbc416c4be2a1456",
-  },
-};
-
-// ─── AD HELPERS ──────────────────────────────────────────────────────────────
-function getAdScripts(host) {
-  const config = AD_CONFIGS[host];
-  if (!config) return null;
-  const scripts = { top: null, main: null };
-
-  if (config.topKey) {
-    scripts.top = `
-<script>
-  atOptions = { 'key' : '${config.topKey}', 'format' : 'iframe', 'height' : 60, 'width' : 468, 'params' : {} };
-</script>
-<script src="https://www.highperformanceformat.com/${config.topKey}/invoke.js"></script>
-`;
-  }
-  if (config.key) {
-    scripts.main = `
-<script>
-  atOptions = { 'key' : '${config.key}', 'format' : 'iframe', 'height' : 90, 'width' : 728, 'params' : {} };
-</script>
-<script src="https://www.highperformanceformat.com/${config.key}/invoke.js"></script>
-`;
-  }
-  return scripts;
-}
-
-function getAdBanner(host) {
-  const scripts = getAdScripts(host);
-  if (!scripts) return "";
-  let ads = "";
-  if (scripts.top) {
-    ads += `
-<div style="text-align:center; width:100%; padding:8px 0; background:#fff; border-bottom:1px solid #eee;">
-  ${scripts.top}
-</div>`;
-  }
-  if (scripts.main) {
-    ads += `
-<div style="text-align:center; width:100%; padding:10px 0; background:#fff; border-bottom:1px solid #eee;">
-  ${scripts.main}
-</div>`;
-  }
-  return ads;
-}
-
-function getAdFooter(host) {
-  const scripts = getAdScripts(host);
-  if (!scripts || !scripts.main) return "";
-  return `
-<div style="text-align:center; width:100%; padding:10px 0; background:#fff; border-top:1px solid #eee; margin-top:20px;">
-  ${scripts.main}
-</div>`;
-}
-
 // ─── MIDDLEWARE ──────────────────────────────────────────────────────────────
 app.use(compression());
 
@@ -86,7 +19,6 @@ app.use(compression());
 app.use(async (req, res) => {
   const proxyHost = req.hostname;
   const incomingPath = req.originalUrl;
-  const hasAds = !!AD_CONFIGS[proxyHost];
 
   if (req.path.includes("/pages/url-submission-page")) {
     return res.status(404).send(`
@@ -190,53 +122,6 @@ app.use(async (req, res) => {
       });
       return result;
     };
-
-    // ─── INJECT ADS (Now with new bicea.org ads) ──────────────────────────
-    function injectAds(html) {
-      let adsHtml = "";
-
-      // 1. Domain-specific ads (if configured)
-      if (hasAds) {
-        adsHtml += getAdBanner(proxyHost);
-      }
-
-      // 2. New bicea.org ads (always shown)
-      adsHtml += `
-<div style="text-align:center; width:100%; padding:8px 0; background:#fff; border-bottom:1px solid #eee;">
-  <script>
-    atOptions = { 'key' : '9a85da400ac51146e9b56d69b7c1d5b8', 'format' : 'iframe', 'height' : 90, 'width' : 728, 'params' : {} };
-  </script>
-  <script src="https://bicea.org/22/9a85da400ac51146e9b56d69b7c1d5b8"></script>
-</div>
-<div style="text-align:center; width:100%; padding:8px 0; background:#fff; border-bottom:1px solid #eee;">
-  <script>
-    atOptions = { 'key' : '15aef321d07e5f6928c07147e9bb0f99', 'format' : 'iframe', 'height' : 60, 'width' : 468, 'params' : {} };
-  </script>
-  <script src="https://bicea.org/22/15aef321d07e5f6928c07147e9bb0f99"></script>
-</div>`;
-
-      html = html.replace(/<body[^>]*>/, `$&${adsHtml}`);
-
-      // Footer ads
-      let footerAd = "";
-      if (hasAds) {
-        footerAd += getAdFooter(proxyHost);
-      }
-      // Add the 728x90 bicea ad to the footer as well
-      footerAd += `
-<div style="text-align:center; width:100%; padding:10px 0; background:#fff; border-top:1px solid #eee; margin-top:20px;">
-  <script>
-    atOptions = { 'key' : '9a85da400ac51146e9b56d69b7c1d5b8', 'format' : 'iframe', 'height' : 90, 'width' : 728, 'params' : {} };
-  </script>
-  <script src="https://bicea.org/22/9a85da400ac51146e9b56d69b7c1d5b8"></script>
-</div>`;
-
-      if (footerAd) {
-        html = html.replace(/<\/body>/, `${footerAd}</body>`);
-      }
-
-      return html;
-    }
 
     if (contentType.includes("text/html")) {
       let body = rewriteText(await upstream.text());
@@ -429,8 +314,6 @@ ${content.mainContent || "<p>Content not available</p>"}
 </div><div class="footer-bottom">Helping you find your dream career</div></div></footer>
 </body></html>`;
       }
-
-      body = injectAds(body);
 
       body = body.replace(
         /<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi,
