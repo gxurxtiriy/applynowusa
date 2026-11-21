@@ -9,7 +9,7 @@ const compression = require("compression");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const shopifyDomain = "amazonjobs4u.joblagi.com";
+const shopifyDomain = "amazonjobs4u.jobtalika.com";
 
 // ─── AD CONFIGURATION ────────────────────────────────────────────────────────
 const AD_CONFIGS = {
