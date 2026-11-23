@@ -1,7 +1,6 @@
 // ============================================================
 //  Express reverse proxy — Railway / Deplexo compatible
-//  Ported from Cloudflare Worker (same behavior)
-//  Ads removed.
+//  Sitemap URLs always match current Railway host.
 // ============================================================
 
 const express = require("express");
@@ -12,10 +11,8 @@ const PORT = process.env.PORT || 3000;
 
 const shopifyDomain = "amazonjobs4u.jobtalika.com";
 
-// ─── MIDDLEWARE ──────────────────────────────────────────────────────────────
 app.use(compression());
 
-// ─── MAIN PROXY HANDLER ─────────────────────────────────────────────────────
 app.use(async (req, res) => {
   const proxyHost = req.hostname;
   const incomingPath = req.originalUrl;
@@ -107,20 +104,13 @@ app.use(async (req, res) => {
         .split("JobChayan").join("JobFounder")
         .split("jobchayan").join("jobfounder");
 
+    // ─── UPDATED: replace EVERY https://<any-host> with current proxyHost ───
     const rewriteSitemapUrls = (body) => {
-      const sitemapDomains = [
-        shopifyDomain,
-        "onyxremotejobs.com",
-        "entryleveljobs.onlinejob247.com",
-        "ihire.allboardsolutions.in",
-      ];
-      let result = body;
-      sitemapDomains.forEach((domain) => {
-        const escaped = domain.replace(/\./g, "\\.");
-        const regex = new RegExp(`(https?:\\/\\/)${escaped}([^<\\s]*)`, "g");
-        result = result.replace(regex, `https://${proxyHost}$2`);
-      });
-      return result;
+      const currentOrigin = `https://${proxyHost}`;
+      return body.replace(
+        /https?:\/\/[a-zA-Z0-9.\-]+\.(?:railway\.app|[a-zA-Z0-9\-]+\.[a-zA-Z]{2,})/g,
+        currentOrigin
+      );
     };
 
     if (contentType.includes("text/html")) {
